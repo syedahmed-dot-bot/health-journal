@@ -36,3 +36,5 @@ dist/
 
 # Environment files
 .env
+
+journal.db

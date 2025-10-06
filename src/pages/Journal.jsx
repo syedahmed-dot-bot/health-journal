@@ -1,47 +1,97 @@
-import { useState } from "react";
+import Navbar from "../components/Navbar";
 
-export default function Journal () {
-    const {text, setText} = useState("");
-    return (
-        <div style = {{padding: "2rem", maxWidth: "700px", "margin": "0 auto"}}>
-            <h1>Daily Journal</h1>
-            <p style={{ color: "#aaa", fontSize: "0.9rem"}}>
-                Writing your thoughts below. Nothing is saved yet.
-            </p>
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-            <textarea
-                style = {{
-                    width: "100%",
-                    minHeight: "300px",
-                    marginTop: "1rem",
-                    padding: "1rem",
-                    fontSize: "1rem",
-                    lineHeight: "1.5",
-                    background: "#222",
-                    color: "#eee",
-                    border: "1px solid #444",
-                    borderRadius: "8px",
-                    resize: "vertical"
-                }}
-                placeholder= "Dear Diary..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                />
+export default function Journal() {
+  const [text, setText] = useState("");
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-                <div 
-                style = {{
-                    marginTop: "1rem",
-                    padding: "1rem",
-                    background: "#333",
-                    borderRadius: "8px",
-                    fontSize: "0.9rem",
-                    color: "#ccc"
-                }}>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+      return;
+    }
 
-                    <strong>Preview:</strong>
-                    <p>{text || "Start typing above to preview your entry here."} </p>
-                </div>
-            </div>
-    );
+    try {
+      const formData = new FormData();
+      formData.append("text", text);
+
+      const res = await fetch("http://127.0.0.1:8000/entries", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to save entry");
+      setMessage("Entry saved successfully!");
+      setText("");
+    } catch (err) {
+      console.error(err);
+      setMessage("Error saving entry.");
+    }
+  };
+
+  return (
+    <>
+      <Navbar />
+      <div
+      style={{
+        minHeight: "100vh",
+        background: "#b8e4bcff",
+        color: "#fff",
+        padding: "2rem",
+      }}
+    >
+      <h1>Journal</h1>
+      <form onSubmit={handleSubmit}>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Write your thoughts..."
+          required
+          style={{
+            width: "100%",
+            height: "150px",
+            padding: "1rem",
+            borderRadius: "8px",
+            border: "none",
+            marginBottom: "1rem",
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            padding: "0.5rem 1.2rem",
+            background: "#4caf50",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Save Entry
+        </button>
+      </form>
+      {message && (
+        <p style={{ marginTop: "1rem", color: "#4caf50" }}>{message}</p>
+      )}
+      <button
+        style={{
+          marginTop: "1rem",
+          background: "#f70e5bff",
+          color: "white",
+          border: "none",
+          padding: "0.5rem 1rem",
+        }}
+        onClick={() => navigate("/dashboard")}
+      >
+        Back to Dashboard
+      </button>
+    </div>
+    </>
+  );
 }
-
