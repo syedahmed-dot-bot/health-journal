@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 import models, auth
-from .database import Base, engine, get_db
+from database import Base, engine, get_db
 
 
 app = FastAPI()
