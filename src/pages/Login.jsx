@@ -21,7 +21,7 @@ export default function Login() {
       formData.append("username", username);
       formData.append("password", password);
 
-      const res = await fetch("http://127.0.0.1:8000/token", {
+      const res = await fetch("https://pulse-journal.onrender.com/", {
         method: "POST",
         body: formData,
       });

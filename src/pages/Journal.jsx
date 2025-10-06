@@ -20,7 +20,7 @@ export default function Journal() {
       const formData = new FormData();
       formData.append("text", text);
 
-      const res = await fetch("http://127.0.0.1:8000/entries", {
+      const res = await fetch("https://pulse-journal.onrender.com/", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
