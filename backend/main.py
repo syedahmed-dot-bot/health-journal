@@ -31,8 +31,8 @@ class SignupRequest(BaseModel):
 @app.post("/signup")
 async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     # Parse JSON body from frontend
-    username = request.get("username")
-    password = request.get("password")
+    username = request.username
+    password = request.password
 
     # Validate input
     if not username or not password:
