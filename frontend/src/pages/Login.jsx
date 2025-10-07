@@ -17,11 +17,8 @@ export default function Login() {
     setError("");
 
     try {
-      const formData = new FormData();
-      formData.append("username", username);
-      formData.append("password", password);
 
-      const res = await fetch("https://pulse-journal.onrender.com", {
+      const res = await fetch("https://pulse-journal.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

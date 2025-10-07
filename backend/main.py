@@ -2,20 +2,19 @@ from fastapi import FastAPI, Form, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 import models, auth
 from database import engine, get_db
-from pydantic import BaseModel
-
 
 app = FastAPI()
 
+# ✅ CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://pulsejournal.vercel.app/",
+        "https://pulsejournal.vercel.app",  # remove trailing slash
         "http://localhost:5173",
     ],
-
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,35 +27,34 @@ models.Base.metadata.create_all(bind=engine)
 def health():
     return {"status": "ok"}
 
+
+#  Signup endpoint
 class SignupRequest(BaseModel):
     username: str
     password: str
 
 @app.post("/signup")
 async def signup(request: SignupRequest, db: Session = Depends(get_db)):
-    # Parse JSON body from frontend
     username = request.username
     password = request.password
 
-    # Validate input
     if not username or not password:
         raise HTTPException(status_code=400, detail="Username and password required")
 
-    # Check if user already exists
     existing = db.query(models.User).filter(models.User.username == username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already registered")
 
-    # Hash and store password
     hashed = auth.hash_password(password)
     user = models.User(username=username, hashed_password=hashed)
     db.add(user)
     db.commit()
     db.refresh(user)
-
     return {"message": "User created", "username": user.username}
 
-@app.post("/token")
+
+#  Login endpoint (for frontend fetch)
+@app.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
@@ -64,6 +62,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     token = auth.create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
 
+
+#  Entry CRUD
 @app.post("/entries")
 def create_entry(
     text: str = Form(...),
@@ -90,7 +90,6 @@ def list_entries(
     return {"entries": [{"id": e.id, "text": e.text} for e in entries]}
 
 
-# Update an entry
 @app.put("/entries/{entry_id}")
 def update_entry(entry_id: int, text: str = Form(...), db: Session = Depends(get_db)):
     entry = db.query(models.Entry).filter(models.Entry.id == entry_id).first()
@@ -102,7 +101,6 @@ def update_entry(entry_id: int, text: str = Form(...), db: Session = Depends(get
     return {"message": "Entry updated", "entry": {"id": entry.id, "text": entry.text}}
 
 
-# Delete an entry
 @app.delete("/entries/{entry_id}")
 def delete_entry(entry_id: int, db: Session = Depends(get_db)):
     entry = db.query(models.Entry).filter(models.Entry.id == entry_id).first()
