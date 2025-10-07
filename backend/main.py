@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 import models, auth
 from database import engine, get_db
+from pydantic import BaseModel
 
 
 app = FastAPI()
@@ -23,13 +24,15 @@ models.Base.metadata.create_all(bind=engine)
 def health():
     return {"status": "ok"}
 
+class SignupRequest(BaseModel):
+    username: str
+    password: str
 
 @app.post("/signup")
-async def signup(request: Request, db: Session = Depends(get_db)):
+async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     # Parse JSON body from frontend
-    data = await request.json()
-    username = data.get("username")
-    password = data.get("password")
+    username = request.get("username")
+    password = request.get("password")
 
     # Validate input
     if not username or not password:
