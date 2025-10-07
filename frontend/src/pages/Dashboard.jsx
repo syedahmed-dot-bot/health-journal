@@ -18,21 +18,21 @@ export default function Dashboard() {
       try {
         const res = await fetch("https://pulse-journal.onrender.com/entries", {
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
 
-        if (res.status === 401) {
-          // Invalid token — force logout
-          localStorage.removeItem("token");
-          navigate("/", { replace: true });
-          return;
+        if (!res.ok) {
+          if (res.status === 401) throw new Error("Unauthorized");
+          throw new Error("Failed to fetch entries");
         }
 
         const data = await res.json();
         setEntries(data.entries || []);
       } catch (err) {
         console.error("Fetch error:", err);
+        localStorage.removeItem("token");
         navigate("/", { replace: true });
       } finally {
         setLoading(false);
