@@ -1,6 +1,6 @@
-import Navbar from "../components/Navbar";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 export default function Dashboard() {
   const [entries, setEntries] = useState([]);
@@ -16,15 +16,23 @@ export default function Dashboard() {
 
     const fetchEntries = async () => {
       try {
-        const res = await fetch("https://pulse-journal.onrender.com", {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch("https://pulse-journal.onrender.com/entries", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-        if (!res.ok) throw new Error("Unauthorized or fetch failed");
+
+        if (res.status === 401) {
+          // Invalid token — force logout
+          localStorage.removeItem("token");
+          navigate("/", { replace: true });
+          return;
+        }
+
         const data = await res.json();
         setEntries(data.entries || []);
       } catch (err) {
         console.error("Fetch error:", err);
-        localStorage.removeItem("token");
         navigate("/", { replace: true });
       } finally {
         setLoading(false);
@@ -32,20 +40,15 @@ export default function Dashboard() {
     };
 
     fetchEntries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [navigate]);
 
   if (loading) return <h2 style={{ textAlign: "center" }}>Loading...</h2>;
 
   return (
     <>
-      {/* Navbar always at the top */}
       <Navbar />
-
-      {/* Main content */}
       <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
         <h1>Dashboard</h1>
-
         {entries.length === 0 ? (
           <p>No entries yet.</p>
         ) : (
@@ -65,6 +68,22 @@ export default function Dashboard() {
             </div>
           ))
         )}
+        <button
+          style={{
+            background: "#f44336",
+            color: "white",
+            padding: "0.5rem 1rem",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+          onClick={() => {
+            localStorage.removeItem("token");
+            navigate("/", { replace: true });
+          }}
+        >
+          Logout
+        </button>
       </div>
     </>
   );
