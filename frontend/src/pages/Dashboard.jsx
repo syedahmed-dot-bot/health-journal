@@ -16,7 +16,7 @@ export default function Dashboard() {
 
     const fetchEntries = async () => {
       try {
-        const res = await fetch("https://pulse-journal.onrender.com/", {
+        const res = await fetch("https://pulse-journal.onrender.com", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Unauthorized or fetch failed");
