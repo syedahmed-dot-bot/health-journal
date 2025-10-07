@@ -8,8 +8,7 @@ export default function Journal() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSave = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/");
@@ -17,20 +16,21 @@ export default function Journal() {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("text", text);
-
-      const res = await fetch("https://pulse-journal.onrender.com", {
+      const res = await fetch("https://pulse-journal.onrender.com/entries", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
+        headers: { "Authorization": `Bearer ${token}` },
+        body: new URLSearchParams({text: entryText}),
       });
 
-      if (!res.ok) throw new Error("Failed to save entry");
-      setMessage("Entry saved successfully!");
-      setText("");
+      if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error("Failed to save entry");
+      }
+      const data = await res.json();
+      console.log("Saved Entry", data);
+      alert ("Entry Saved!");
     } catch (err) {
-      console.error(err);
+      console.error("Error saving entry", err);
       setMessage("Error saving entry.");
     }
   };
