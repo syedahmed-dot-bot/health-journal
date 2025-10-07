@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from backend import models
 from backend import auth
-from backend.database import Base, engine, get_db
+from backend.database import engine, get_db
 
 
 app = FastAPI()
