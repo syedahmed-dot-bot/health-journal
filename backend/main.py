@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Form, Depends, HTTPException, status
+from fastapi import FastAPI, Form, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-import models, auth
-from database import Base, engine, get_db
+from backend import models, auth
+from backend.database import Base, engine, get_db
 
 
 app = FastAPI()
@@ -25,15 +25,28 @@ def health():
 
 
 @app.post("/signup")
-def signup(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def signup(request: Request, db: Session = Depends(get_db)):
+    # Parse JSON body from frontend
+    data = await request.json()
+    username = data.get("username")
+    password = data.get("password")
+
+    # Validate input
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Username and password required")
+
+    # Check if user already exists
     existing = db.query(models.User).filter(models.User.username == username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already registered")
+
+    # Hash and store password
     hashed = auth.hash_password(password)
     user = models.User(username=username, hashed_password=hashed)
     db.add(user)
     db.commit()
     db.refresh(user)
+
     return {"message": "User created", "username": user.username}
 
 @app.post("/token")
