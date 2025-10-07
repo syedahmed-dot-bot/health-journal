@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import models
-from .database import get_db
+from database import get_db
 
 SECRET_KEY = "supersecretkey"      # replace later with env var
 ALGORITHM = "HS256"
