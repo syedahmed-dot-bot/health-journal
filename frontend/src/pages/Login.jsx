@@ -23,7 +23,8 @@ export default function Login() {
 
       const res = await fetch("https://pulse-journal.onrender.com", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) throw new Error("Invalid credentials");
