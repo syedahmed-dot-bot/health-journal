@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from backend import models
+import models
 from .database import get_db
 
 SECRET_KEY = "supersecretkey"      # replace later with env var
