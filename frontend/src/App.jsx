@@ -1,7 +1,7 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";   // ✅ import your new Signup page
+import Signup from "./pages/Signup";   
 import Dashboard from "./pages/Dashboard";
 import Journal from "./pages/Journal";
 
@@ -10,7 +10,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/" element={<Signup />} />   
+        <Route path="/signup" element={<Signup />} />   
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/journal" element={<Journal />} />
       </Routes>

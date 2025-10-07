@@ -43,7 +43,7 @@ export default function Login() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#111",
+        background: "#def894ff",
         color: "#fff",
       }}
     >
@@ -105,6 +105,10 @@ export default function Login() {
           </p>
         )}
       </form>
+      <p onClick={() => navigate("/signup")} style={{ cursor: "pointer", color: "blue" }}>
+  Don’t have an account? Sign up
+</p>
+
     </div>
   );
 }
