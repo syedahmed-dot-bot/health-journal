@@ -11,7 +11,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pulsejournal.vercel.app/"],
+    allow_origins=["https://vercel.com/syedahmed-dot-bots-projects/pulsejournal/59x6vrh9d2FXuA6a8HEczGgKazgx"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
