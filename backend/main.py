@@ -3,18 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import models, auth
-from database import engine, get_db
+from backend import models, auth
+from backend.database import engine, get_db
+from groq import Groq
+import os
+from dotenv import load_dotenv
 
 app = FastAPI()
 
-# ✅ CORS setup
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://pulsejournal.vercel.app",  # remove trailing slash
-        "http://localhost:5173",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,6 +50,7 @@ async def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    print(f"Created user: {user.username}")
     return {"message": "User created", "username": user.username}
 
 
@@ -68,9 +69,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 def create_entry(
     text: str = Form(...),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
 ):
-    entry = models.Entry(text=text, user_id=current_user.id)
+    entry = models.Entry(text=text, user_id=1)
     db.add(entry)
     db.commit()
     db.refresh(entry)
@@ -80,15 +80,77 @@ def create_entry(
 @app.get("/entries")
 def list_entries(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
 ):
     entries = (
-        db.query(models.Entry)
-        .filter(models.Entry.user_id == current_user.id)
-        .all()
+        db.query(models.Entry).all()
     )
     return {"entries": [{"id": e.id, "text": e.text} for e in entries]}
 
+class InsightRequest(BaseModel):
+    text: str
+
+load_dotenv()
+
+@app.post("/insight")
+async def generate_insight(request: InsightRequest):
+    entry_text = request.text.strip()
+    if not entry_text:
+        return {{"insight": "No text provided."}}
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    prompt = f"""
+    You are a kind, emotionally intelligent friend who gives short, encouraging insights.
+    Analyze the following journal entry and respond in 80-100 supportive words.
+    
+    Journal Entry: "{entry_text}"
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": "You are an empathetic wellness coach."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.8,
+        )
+
+        insight = response.choices[0].message.content.strip()
+        return {"insight": insight}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/summary")
+def summarize_recent_entries(db: Session = Depends(get_db)):
+    """Summarize the last 8 journal entries into a friendly insight."""
+    entries = (
+        db.query(models.Entry)
+        .order_by(models.Entry.id.desc())
+        .limit(5)
+        .all()
+    )
+    if not entries:
+        raise HTTPException(status_code=404, detail="No entries found")
+
+    combined_text = "\n".join([e.text for e in entries[::-1]])  # oldest to newest
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    # Generate the 8-entry summary
+    completion = client.chat.completions.create(
+        model="llama-3.1-8b-instant",  # or whichever model you're using
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a compassionate friend analyzing journal entries.",
+            },
+            {
+                "role": "user",
+                "content": f"Here are 8 journal entries:\n\n{combined_text}\n\nSummarize them into a warm, reflective insight (2–3 sentences).",
+            },
+        ],
+    )
+
+    summary_text = completion.choices[0].message.content.strip()
+    return {"summary": summary_text}
 
 @app.put("/entries/{entry_id}")
 def update_entry(entry_id: int, text: str = Form(...), db: Session = Depends(get_db)):
